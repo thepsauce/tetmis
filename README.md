@@ -12,12 +12,12 @@ gcc src/main.c src/args.c src/playing.c -Iinclude -lncursesw -o tetmis
 
 ## Controls
 
-<kbd>h</kbd>   Move left
-<kbd>j</kbd>   Move down
-<kbd>l</kbd>   Move right
+<kbd>h</kbd>   Move left<br>
+<kbd>j</kbd>   Move down<br>
+<kbd>l</kbd>   Move right<br>
 
-<kbd>d</kbd>   Rotate left
-<kbd>f</kbd>   Rotate right
+<kbd>d</kbd>   Rotate left<br>
+<kbd>f</kbd>   Rotate right<br>
 
 <kbd>Enter</kbd>  Pause
 
