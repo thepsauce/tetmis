@@ -11,7 +11,24 @@
 
 #define ARRLEN(a) (sizeof(a)/sizeof*(a))
 
-#define FPS 30
+/* Parsed program arguments */
+struct program_args {
+	int fps;
+	int level;
+	int x, y;
+	int scalex, scaley;
+	int gridw, gridh;
+	int colors[10][2];
+};
+
+int parse_args(int argc, const char **argv);
+
+extern struct program_args program_args;
+
+extern time_t time_stamp;
+extern time_t elapsed_time;
+
+void chktime(bool reset);
 
 struct transform {
 	int xPos, yPos;
@@ -19,21 +36,30 @@ struct transform {
 
 };
 
+extern struct transform global_transform;
+
 enum {
 	GS_STARTUP,
-	GS_MENU,
 	GS_PLAYING,
+	GS_ENTERNAME,
 	GS_PIECEFELL,
 	GS_PAUSED,
 	GS_GAMEOVER,
 };
 
-struct game_data {
+void game_setstate(int state);
+void game_drawframe(int x, int y, int w, int h, bool fill);
+void game_erase(int x, int y, int w, int h);
+
+struct playing_data {
 	int startLevel;
 	int level;
 	int points;
 	int lines;
 };
+
+int level_getpoints(int level, int lines);
+int level_getframespercell(int level);
 
 #define GRID_WIDTH 10
 #define GRID_HEIGHT 30
@@ -46,12 +72,17 @@ struct grid {
 	/* up to four last cleared lines */
 	int lastLines[4];
 	int nLastLines;
-} main_grid;
+};
 
 struct piece {
 	int x, y;
 	char mat[4 * 4];
 	int sqn;
 };
+
+extern struct playing_data main_data;
+extern struct grid main_grid;
+
+void playing_reset(void);
 
 #endif
