@@ -12,11 +12,15 @@ gcc src/main.c src/args.c src/playing.c -Iinclude -lncursesw -o tetmis
 
 ## Controls
 
-h   Move left
-j   Move down
-l   Move right
+<kbd>h</kbd>   Move left<br>
+<kbd>j</kbd>   Move down<br>
+<kbd>l</kbd>   Move right<br>
 
-d   Rotate left
-f   Rotate right
+<kbd>d</kbd>   Rotate left<br>
+<kbd>f</kbd>   Rotate right<br>
 
-CR  Pause
+<kbd>Enter</kbd>  Pause
+
+## Windows version
+
+I made a version where I used WINAPI, it can be found here: https://github.com/thepsauce/Tetris-in-C
