@@ -23,7 +23,7 @@ void
 version(void)
 {
 	endwin();
-	printf("Tetmis version 0.0.1\n");
+	printf("Tetmis version 1.0.0\n");
 	exit(0);
 }
 
@@ -31,7 +31,7 @@ void
 usage(void)
 {
 	endwin();
-	printf("Tetmis version 0.0.1, built 08/09/2023\n");
+	printf("Tetmis version 1.0.0, built 08/11/2023\n");
 	printf("Play tetris within your terminal!\n\n");
 	printf("--version\tShow the version\n");
 	printf("--usage | --help\tShow this help\n");
@@ -114,7 +114,7 @@ parse_args(int argc, const char **argv)
 			return argi;
 		pinfo++;
 		if(info[0] == 0) {
-			(*((void (*)(void)) pinfo))();
+			((void (*)(void)) *pinfo)();
 			continue;
 		}
 		arg++;
