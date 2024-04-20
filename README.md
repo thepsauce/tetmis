@@ -1,6 +1,9 @@
 # tetmis
 Classical Tetris using NCurses
 
+![image](showcase1.png)
+![image](showcase2.png)
+
 ## Quick start
 
 ```
