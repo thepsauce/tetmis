@@ -1,6 +1,8 @@
 #include "tetmis.h"
 #include <sys/stat.h> /* mkdir */
 
+#define BOX "\u25a0"
+
 struct playing_data main_data;
 int down_points;
 struct grid main_grid;
@@ -35,8 +37,7 @@ struct piece pieces[] = {
 			0, 7, 0 }, 3 },
 }, cur_piece, next_piece;
 
-static void
-playing_nextpiece(void)
+static void playing_nextpiece(void)
 {
 	cur_piece = next_piece;
 	cur_piece.x = (main_grid.w - cur_piece.sqn) / 2;
@@ -44,8 +45,7 @@ playing_nextpiece(void)
 	next_piece = pieces[rand() % ARRLEN(pieces)];
 }
 
-void
-playing_reset(void)
+void playing_reset(void)
 {
 	main_data.points = 0;
 	main_data.lines = 0;
@@ -55,44 +55,45 @@ playing_reset(void)
 	playing_nextpiece();
 }
 
-bool
-grid_collides(struct grid *grid, struct piece *piece)
+bool grid_collides(struct grid *grid, struct piece *piece)
 {
 	const int x = piece->x;
 	const int y = piece->y;
 	const char *const mat = piece->mat;
 	const int sqn = piece->sqn;
 
-	for(int i = 0; i < sqn; i++)
-		for(int j = 0; j < sqn; j++) {
-			if(mat[i + j * sqn] == 0)
+	for (int i = 0; i < sqn; i++) {
+		for (int j = 0; j < sqn; j++) {
+			if (mat[i + j * sqn] == 0) {
 				continue;
-			if(x + i < 0 ||
-			y + j < 0 ||
-			x + i >= grid->w ||
-			y + j >= grid->h)
+			}
+			if (x + i < 0 || y + j < 0 ||
+					x + i >= grid->w ||
+					y + j >= grid->h) {
 				return true;
-			if(grid->mat[x + i + (y + j) * grid->w] != 0)
+			}
+			if (grid->mat[x + i + (y + j) * grid->w] != 0) {
 				return true;
+			}
 		}
+	}
 	return false;
 }
 
-static inline void
-grid_collapse(struct grid *grid, int row)
+static inline void grid_collapse(struct grid *grid, int row)
 {
 	/* shift down all rows above the given row */
-	for(; row > 0; row--)
+	for (; row > 0; row--) {
 		/* use memcpy for non overlapping array regions */
 		memcpy(grid->mat + row * grid->w,
 			grid->mat + (row - 1) * grid->w,
 			grid->w);
+	}
 	/* clear first row */
 	memset(grid->mat, 0, grid->w);
 }
 
-int
-grid_lockpiece(struct grid *grid, struct piece *piece)
+int grid_lockpiece(struct grid *grid, struct piece *piece)
 {
 	const int x = piece->x;
 	const int y = piece->y;
@@ -100,21 +101,24 @@ grid_lockpiece(struct grid *grid, struct piece *piece)
 	const int sqn = piece->sqn;
 
 	/* place the piece into the grid */
-	for(int i = 0; i < sqn; i++)
-		for(int j = 0; j < sqn; j++) {
+	for (int i = 0; i < sqn; i++)
+		for (int j = 0; j < sqn; j++) {
 			const char ch = mat[i + j * sqn];
-			if(ch != 0)
+			if (ch != 0) {
 				grid->mat[x + i + (y + j) * grid->w] = ch;
+			}
 		}
 	/* check for line clears */
 	grid->nLastLines = 0;
-	for(int j = 0; j < sqn; j++) {
+	for (int j = 0; j < sqn; j++) {
 		int i;
 
-		for(i = 0; i < grid->w; i++)
-			if(grid->mat[i + (y + j) * grid->w] == 0)
+		for (i = 0; i < grid->w; i++) {
+			if (grid->mat[i + (y + j) * grid->w] == 0) {
 				break;
-		if(i == grid->w) {
+			}
+		}
+		if (i == grid->w) {
 			grid_collapse(grid, y + j);
 			grid->lastLines[grid->nLastLines++] = y + j;
 		}
@@ -122,8 +126,7 @@ grid_lockpiece(struct grid *grid, struct piece *piece)
 	return grid->nLastLines;
 }
 
-void
-grid_display(struct grid *grid)
+void grid_display(struct grid *grid)
 {
 	const int px = grid->transform.xPos;
 	const int py = grid->transform.yPos;
@@ -133,31 +136,34 @@ grid_display(struct grid *grid)
 	const int w = grid->w;
 	const int h = grid->h;
 
-	for(int i = 0; i < w; i++) {
-		if(px + i < 0 || px + i >= COLS)
+	for (int i = 0; i < w; i++) {
+		if (px + i < 0 || px + i >= COLS) {
 			continue;
-		for(int j = GRID_PADTOP; j < h; j++) {
+		}
+		for (int j = GRID_PADTOP; j < h; j++) {
 			const char ch = mat[i + j * w];
-			if(py + j < 0 || py + j >= LINES)
+			if (py + j < 0 || py + j >= LINES) {
 				continue;
+			}
 			move(j * sy + py, i * sx + px);
-			if(ch != 0) {
-				attr_set(A_NORMAL, ch, NULL);
-				for(int s = 0; s < main_grid.transform.xScale;
-						s++)
-					addstr("\u2588");
+			if (ch != 0) {
+				attr_set(A_REVERSE, ch, NULL);
+				for (int s = 0; s < main_grid.transform.xScale;
+						s++) {
+					addstr(BOX);
+				}
 			} else {
-				attr_set(A_DIM, 8, NULL);
-				for(int s = 0; s < main_grid.transform.xScale;
-						s++)
-					addstr("\u2588");
+				attr_set(0, 0, NULL);
+				for (int s = 0; s < main_grid.transform.xScale;
+						s++) {
+					addch(' ');
+				}
 			}
 		}
 	}
 }
 
-int
-piece_fall(struct grid *grid, struct piece *piece)
+int piece_fall(struct grid *grid, struct piece *piece)
 {
 	const int x = piece->x;
 	const int y = piece->y + 1;
@@ -165,114 +171,125 @@ piece_fall(struct grid *grid, struct piece *piece)
 	const int sqn = piece->sqn;
 
 	/* trace along the bottom of the piece (micro optimization) */
-	for(int i = 0; i < sqn; i++)
-		for(int j = sqn - 1; j >= 0; j--)
-			if(mat[i + j * sqn] != 0) {
-				if(y + j >= grid->h ||
-				grid->mat[x + i + (y + j) * grid->w] != 0)
+	for (int i = 0; i < sqn; i++) {
+		for (int j = sqn - 1; j >= 0; j--) {
+			if (mat[i + j * sqn] != 0) {
+				if (y + j >= grid->h ||
+						grid->mat[x + i + (y + j)
+						* grid->w] != 0) {
 					return grid_lockpiece(grid, piece);
+				}
 				break;
 			}
+		}
+	}
 	piece->y++;
 	return -1;
 }
 
-void
-piece_rot(struct piece *piece, bool ccw /* counter clock wise */)
+void piece_rot(struct piece *piece, bool ccw /* counter clock wise */)
 {
 	char rot[4 * 4];
 	char *const mat = piece->mat;
 	const int sqn = piece->sqn;
 
-	for(int i = 0; i < sqn; i++)
-		for(int j = 0; j < sqn; j++)
-			if(ccw)
+	for (int i = 0; i < sqn; i++) {
+		for (int j = 0; j < sqn; j++)
+			if (ccw) {
 				rot[j + (sqn - 1 - i) * sqn] =
 					mat[i + j * sqn];
-			else
+			} else {
 				rot[sqn - 1 - j + i * sqn] =
 					mat[i + j * sqn];
+			}
+	}
 	memcpy(mat, rot, sizeof(rot));
 }
 
-void
-piece_display(const struct piece *piece, const struct transform *transform)
+void piece_display(const struct piece *piece, const struct transform *transform)
 {
-	const int x = piece->x;
-	const int y = piece->y;
 	const int px = transform->xPos;
 	const int py = transform->yPos;
 	const int sx = transform->xScale;
 	const int sy = transform->yScale;
-	const char *const mat = piece->mat;
-	const int sqn = piece->sqn;
 
-	for(int i = 0; i < sqn; i++)
-		for(int j = 0; j < sqn; j++) {
-			const char ch = mat[i + j * sqn];
-			if(ch != 0) {
-				attr_set(A_NORMAL, ch, NULL);
-				move((y + j) * sy + py, (x + i) * sx + px);
-				for(int s = 0; s < main_grid.transform.xScale;
-						s++)
-					addstr("\u2588");
+	for (int i = 0; i < piece->sqn; i++)
+		for (int j = 0; j < piece->sqn; j++) {
+			const char ch = piece->mat[i + j * piece->sqn];
+			if (ch != 0) {
+				int y, x;
+
+				attr_set(A_REVERSE, ch, NULL);
+				x = (piece->x + i) * sx + px;
+				y = (piece->y + j) * sy + py;
+				for (int ty = 0; ty < sy; ty++) {
+					for (int tx = 0; tx < sx; tx++) {
+						mvaddstr(y + ty, x + tx, BOX);
+					}
+				}
 			}
 		}
 }
 
-int
-gs_piecefell(int c)
+void render_cell(int oy, int ox, const struct transform *transform,
+		const char *str)
 {
-	if(c != -1)
+	if (transform == NULL) {
+		transform = &main_grid.transform;
+	}
+	oy += transform->yPos;
+	ox += transform->xPos;
+	for (int y = 0; y < transform->yScale; y++) {
+		for (int x = 0; x < transform->xScale; x++) {
+			mvaddstr(oy + y, ox + x, str);
+		}
+	}
+}
+
+int gs_piecefell(int c)
+{
+	if (c != -1) {
 		return 0;
+	}
 	/* play a 800 milliseconds long flashing animation
 	** for 4 line clears */
-	if(elapsed_time < 800 && main_grid.nLastLines == 4) {
+	if (elapsed_time < 800 && main_grid.nLastLines == 4) {
 		color_set(7 - elapsed_time / 180, NULL);
-		for(int i = 0; i < main_grid.nLastLines; i++) {
-			move(main_grid.transform.yPos +
-					main_grid.lastLines[i] *
-				main_grid.transform.yScale,
-				main_grid.transform.xPos);
-			for(int j = 0; j < main_grid.w *
-					main_grid.transform.xScale; j++)
-				addstr("\u2588");
+		for (int i = 0; i < main_grid.nLastLines; i++) {
+			const int y = main_grid.lastLines[i] *
+				main_grid.transform.yScale;
+			for (int x = 0; x < main_grid.w *
+					main_grid.transform.xScale; x++) {
+				render_cell(y, x, NULL, "\u2588");
+			}
 		}
 		return 0;
 	/* play a 500 milliseconds long animation for other line clears */
-	} else if(elapsed_time < 500 && main_grid.nLastLines > 0 &&
-			main_grid.nLastLines != 4) {
-		const int pos = elapsed_time / 100;
-		attr_set(A_DIM, 8, NULL);
-		for(int i = 0; i < main_grid.nLastLines; i++) {
-			move(main_grid.transform.yPos +
-					main_grid.lastLines[i] *
+	} else if (elapsed_time < 300 && main_grid.nLastLines > 0) {
+		const int pos = elapsed_time / 85;
+		attr_set(0, 0, NULL);
+		for (int i = 0; i < main_grid.nLastLines; i++) {
+			render_cell(main_grid.lastLines[i] *
 					main_grid.transform.yScale,
-				main_grid.transform.xPos + pos *
-					main_grid.transform.xScale);
-			for(int s = 0; s < main_grid.transform.xScale;
-					s++)
-				addstr("\u2588");
-			move(main_grid.transform.yPos +
-					main_grid.lastLines[i] *
+				pos * main_grid.transform.xScale, NULL, " ");
+			render_cell(main_grid.lastLines[i] *
 					main_grid.transform.yScale,
-				main_grid.transform.xPos +
-					(main_grid.w - pos - 1) *
-					main_grid.transform.xScale);
-			for(int s = 0; s < main_grid.transform.xScale;
-					s++)
-				addstr("\u2588");
+				(main_grid.w - pos - 1) *
+					main_grid.transform.xScale, NULL, " ");
 		}
+		return 0;
+	} else if (elapsed_time < 500 && main_grid.nLastLines > 0) {
 		return 0;
 	}
 
-	if(main_grid.nLastLines > 0) {
+	if (main_grid.nLastLines > 0) {
 		int level;
 
 		main_data.lines += main_grid.nLastLines;
 		level = main_data.lines / 10;
-		if(level > main_data.level)
+		if (level > main_data.level) {
 			main_data.level = level;
+		}
 		main_data.points += level_getpoints(main_data.level,
 				main_grid.nLastLines);
 	}
@@ -286,35 +303,35 @@ gs_piecefell(int c)
 	return 0;
 }
 
-int
-gs_playing(int c)
+int gs_playing(int c)
 {
 	struct piece p;
 	time_t ticks;
 	bool ispress = false;
 
 	p = cur_piece;
-	switch(tolower(c)) {
+	switch (tolower(c)) {
 	case -1: {
 		int x, y, w, h;
 		struct transform t;
 
 		ticks = level_getframespercell(main_data.level) *
 			1000 / program_args.fps;
-		if(elapsed_time >= ticks) {
+		if (elapsed_time >= ticks) {
 		down:
-			if(piece_fall(&main_grid, &cur_piece) >= 0) {
+			if (piece_fall(&main_grid, &cur_piece) >= 0) {
 				game_setstate(GS_PIECEFELL);
 				return 0;
 			}
-			if(ispress)
+			if (ispress) {
 				down_points++;
+			}
 			elapsed_time -= ticks;
 			time_stamp += ticks;
 		}
 		grid_display(&main_grid);
 		piece_display(&cur_piece, &main_grid.transform);
-		/* erase the next piece area */
+		/* draw the next piece area */
 		t = (struct transform) {
 			main_grid.transform.xPos +
 				(main_grid.w + 1) *
@@ -368,7 +385,14 @@ gs_playing(int c)
 		w = main_grid.w * main_grid.transform.xScale + 1;
 		h = (main_grid.h + 1 - GRID_PADTOP) *
 			main_grid.transform.yScale;
-		game_drawframe(x, y, w, h, false);
+		for (int i = 1; i < w; i++) {
+			mvaddstr(y, x + i, "\u258b");
+			mvaddstr(y + h, x + i, "\u2588");
+		}
+		for (int i = 0; i <= h; i++) {
+			mvaddstr(y + i, x, "\u2590");
+			mvaddstr(y + i, x + w, "\u258c");
+		}
 		/* draw title */
 		mvprintw(y, x + (w - 7) / 2, "Lines %d", main_data.lines);
 		return 0;
@@ -395,15 +419,15 @@ gs_playing(int c)
 		break;
 
 	}
-	if(!grid_collides(&main_grid, &p))
+	if (!grid_collides(&main_grid, &p)) {
 		cur_piece = p;
+	}
 	return 0;
 }
 
-int
-gs_paused(int c)
+int gs_paused(int c)
 {
-	switch(c) {
+	switch (c) {
 	case -1:
 		/* erase grid and next piece preview */
 		game_erase(main_grid.transform.xPos,
@@ -433,25 +457,22 @@ gs_paused(int c)
 	return 0;
 }
 
-int
-gs_gameover(int c)
+int gs_gameover(int c)
 {
 	(void) c;
 	/* 2 second long game over animation */
-	if(elapsed_time < 2000) {
+	if (elapsed_time < 2000) {
 		int amount;
 
 		amount = elapsed_time / (2000 / (main_grid.h - 1 - GRID_PADTOP));
-		move(main_grid.transform.yPos +
-				(main_grid.h - amount) *
+		for (int x = 0; x < main_grid.w *
+				main_grid.transform.xScale - 1; x++)
+		render_cell((main_grid.h - amount) *
 				main_grid.transform.yScale - 1,
-			main_grid.transform.xPos);
-		for(int x = 0; x < main_grid.w *
-				main_grid.transform.xScale; x++)
-			addch(' ');
+				x, NULL, " ");
 		return 0;
 	}
-	if(elapsed_time < 3000) {
+	if (elapsed_time < 3000) {
 		mvaddstr(main_grid.transform.yPos + main_grid.h *
 				main_grid.transform.yScale / 2,
 			main_grid.transform.xPos + (main_grid.w *
@@ -463,12 +484,11 @@ gs_gameover(int c)
 	return 0;
 }
 
-int
-gs_entername(int c)
+int gs_entername(int c)
 {
 	static char namebuf[15];
 	static int nnamebuf;
-	switch(c) {
+	switch (c) {
 	case -1:
 		mvaddstr(main_grid.transform.yPos + main_grid.h *
 				main_grid.transform.yScale / 2,
@@ -487,16 +507,19 @@ gs_entername(int c)
 				namebuf);
 		return 0;
 		break;
-	case KEY_DC: case KEY_BACKSPACE: case 0x7f:
-		if(nnamebuf)
-			namebuf[--nnamebuf] = 0;
+	case KEY_DC:
+	case KEY_BACKSPACE:
+	case 0x7f:
+		if (nnamebuf) {
+			namebuf[--nnamebuf] = '\0';
+		}
 		break;
 	case '\n': {
 		char path[4096];
 		const char *home;
 
 		home = getenv("HOME");
-		if(home) {
+		if (home) {
 			size_t n;
 			struct tm *tm;
 			FILE *fp;
@@ -513,7 +536,7 @@ gs_entername(int c)
 				"_%Y-%m-%d_%H:%M:%S.dat", tm);
 
 			fp = fopen(path, "w");
-			if(fp) {
+			if (fp) {
 				fwrite(namebuf, 1, nnamebuf, fp);
 				fputc(0, fp);
 				fwrite(&main_data, sizeof(main_data), 1, fp);
@@ -521,14 +544,16 @@ gs_entername(int c)
 			}
 		}
 		memset(main_grid.mat, 0, main_grid.w * main_grid.h);
+		playing_reset();
 		game_setstate(GS_PLAYING);
 		break;
 	}
 	default:
-		if(nnamebuf + 1 == sizeof(namebuf))
+		if (nnamebuf + 1 == sizeof(namebuf)) {
 			namebuf[sizeof(namebuf) - 1] = c;
-		else
+		} else {
 			namebuf[nnamebuf++] = c;
+		}
 	}
 	return 0;
 }

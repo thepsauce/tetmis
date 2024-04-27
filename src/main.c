@@ -5,15 +5,14 @@
 time_t time_stamp;
 time_t elapsed_time;
 
-void
-chktime(bool reset)
+void chktime(bool reset)
 {
 	struct timespec ts;
 	time_t millis;
 
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	millis = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-	if(reset) {
+	if (reset) {
 		time_stamp = millis;
 		elapsed_time = 0;
 	} else {
@@ -39,28 +38,28 @@ int (*game_states[])(int c) = {
 	[GS_PIECEFELL] = gs_piecefell,
 	[GS_PAUSED] = gs_paused,
 	[GS_GAMEOVER] = gs_gameover,
+	[GS_QUIT] = NULL,
 };
 
-void
-game_setstate(int state)
+void game_setstate(int state)
 {
 	chktime(true);
 	game_state = state;
 }
 
-void
-game_erase(int x, int y, int w, int h)
+void game_erase(int x, int y, int w, int h)
 {
 	const int sw = w;
-	while(h--) {
+	attr_set(0, 0, NULL);
+	while (h--) {
 		w = sw;
-		while(w--)
+		while (w--) {
 			mvaddch(y + h, x + w, ' ');
+		}
 	}
 }
 
-void
-game_drawframe(int x, int y, int w, int h, bool fill)
+void game_drawframe(int x, int y, int w, int h, bool erase)
 {
 	/* draw borders */
 	mvhline(y, x, ACS_HLINE, w);
@@ -72,45 +71,51 @@ game_drawframe(int x, int y, int w, int h, bool fill)
 	mvaddch(y, x + w, ACS_URCORNER);
 	mvaddch(y + h, x, ACS_LLCORNER);
 	mvaddch(y + h, x + w, ACS_LRCORNER);
-	if(fill) {
-		attr_set(A_DIM, 8, NULL);
-		for(y++, h--; h; y++, h--)
-			for(int tx = x + 1; tx < x + w; tx++)
-				mvaddstr(y, tx, "\u2588");
+	if (erase) {
+		attr_set(0, 0, NULL);
+		for (y++, h--; h; y++, h--) {
+			for (int tx = x + 1; tx < x + w; tx++) {
+				mvaddch(y, tx, ' ');
+			}
+		}
 	}
 }
 
-int
-level_getframespercell(int level)
+int level_getframespercell(int level)
 {
-	if(level <= 8)
+	if (level <= 8) {
 		return 48 - level * 5;
-	if(level == 9)
+	}
+	if (level == 9) {
 		return 6;
-	if(level < 13)
+	}
+	if (level < 13) {
 		return 5;
-	if(level < 16)
+	}
+	if (level < 16) {
 		return 4;
-	if(level < 19)
+	}
+	if (level < 19) {
 		return 3;
-	if(level < 29)
+	}
+	if (level < 29) {
 		return 2;
+	}
 	return 1;
 }
 
-int
-level_getpoints(int level, int nLines)
+int level_getpoints(int level, int nLines)
 {
 	static const int multp[] = {
 		0, 40, 100, 300, 1200
 	};
-	if(nLines > 4)
+	if (nLines > 4) {
 		return -1;
+	}
 	return (level + 1) * multp[nLines];
 }
 
-int
-gs_startup(int c)
+int gs_startup(int c)
 {
 	/* show a little startup animation and
 	** then ask the user to press enter */
@@ -121,18 +126,20 @@ gs_startup(int c)
 		"   #   #       #   # # #   #       # ",
 		"   #   #####   #   # # #  ###  ####  "
 	};
-	if(elapsed_time < 4000) {
+	if (elapsed_time < 4000) {
 		int nLetters, n;
 
 		nLetters = elapsed_time / 200;
-		if(nLetters > 6)
+		if (nLetters > 6) {
 			nLetters = 6;
+		}
 		n = nLetters * 6;
-		for(int i = 0; i < (int) ARRLEN(text); i++)
-			for(int j = 0; j < n; j++) {
-				if(text[i][j] == ' ')
+		for (int i = 0; i < (int) ARRLEN(text); i++)
+			for (int j = 0; j < n; j++) {
+				if (text[i][j] == ' ') {
 					continue;
-				if(elapsed_time > 2000) {
+				}
+				if (elapsed_time > 2000) {
 					attr_set(0, j / 6, NULL);
 				}
 				mvaddstr((LINES - ARRLEN(text)) / 2 + i,
@@ -142,7 +149,7 @@ gs_startup(int c)
 		return 0;
 	}
 
-	if(c != '\n') {
+	if (c != '\n') {
 		attr_set(0, 0, NULL);
 		mvaddstr((LINES - ARRLEN(text)) / 2 + ARRLEN(text) + 1,
 			(COLS - 20) / 2, "Press enter to play!");
@@ -153,15 +160,14 @@ gs_startup(int c)
 	return 0;
 }
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	int argi;
 
 	setlocale(LC_ALL, ""); /* to properly display unicode */
 	srand(time(NULL));
 
-	if((argi = parse_args(argc - 1, (const char**) argv + 1)) != 0) {
+	if ((argi = parse_args(argc - 1, (const char**) argv + 1)) != 0) {
 		argi++;
 		fprintf(stderr, "failed parsing argument no. %d (%s)\n",
 			argi, argv[argi]);
@@ -180,14 +186,18 @@ main(int argc, char **argv)
 				** a special sequence */
 
 	start_color();
-	for(int i = 1; i < 9; i++)
-		init_pair(i, program_args.colors[i][0], program_args.colors[i][1]);
+	for (int i = 1; i < 9; i++) {
+		init_pair(i, program_args.colors[i][0],
+				program_args.colors[i][1]);
+	}
 
 	main_data.startLevel = program_args.level;
 	main_data.level = program_args.level;
 	main_grid.transform = (struct transform) {
-		.xPos = (COLS - GRID_WIDTH - 10) / 2,
-		.yPos = (LINES - GRID_HEIGHT - GRID_PADTOP) / 2,
+		.xPos = (COLS - (GRID_WIDTH - 10) *
+				program_args.scalex / 2) / 2,
+		.yPos = (LINES - (GRID_HEIGHT - GRID_PADTOP) *
+				program_args.scaley) / 2,
 		.xScale = program_args.scalex,
 		.yScale = program_args.scaley,
 	};
@@ -199,9 +209,14 @@ main(int argc, char **argv)
 	playing_reset();
 
 	game_setstate(GS_STARTUP);
-	while(1) {
+	while (game_state != GS_QUIT) {
 		const int c = getch();
 		chktime(false);
+		if (c == KEY_RESIZE) {
+			clear();
+			(*game_states[game_state])(-1);
+			continue;
+		}
 		(*game_states[game_state])(c);
 	}
 

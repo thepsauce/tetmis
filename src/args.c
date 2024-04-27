@@ -19,19 +19,17 @@ struct program_args program_args = {
 	},
 };
 
-void
-version(void)
+void version(void)
 {
 	endwin();
-	printf("Tetmis version 1.0.0\n");
+	printf("Tetmis version 1.0.9\n");
 	exit(0);
 }
 
-void
-usage(void)
+void usage(void)
 {
 	endwin();
-	printf("Tetmis version 1.0.0, built 08/11/2023\n");
+	printf("Tetmis version 1.0.9\n");
 	printf("Play tetris within your terminal!\n\n");
 	printf("--version\tShow the version\n");
 	printf("--usage | --help\tShow this help\n");
@@ -81,49 +79,56 @@ static const char *possible_args[] = {
 	"&i", (char*) &program_args.gridh, "gridh",
 };
 
-int
-parse_args(int argc, const char **argv)
+int parse_args(int argc, const char **argv)
 {
 	const char **pinfo, *info, *arg, *pos;
 	int p;
 	size_t plen;
 
-	for(int argi = 0; argi < argc; argi++) {
+	for (int argi = 0; argi < argc; argi++) {
 		arg = argv[argi];
-		if(*arg != '-')
+		if (*arg != '-') {
 			return argi;
-		while(*arg == '-')
+		}
+		while (*arg == '-') {
 			arg++;
+		}
 
-		for(p = 0; p < (int) ARRLEN(possible_args); p++) {
+		for (p = 0; p < (int) ARRLEN(possible_args); p++) {
 			pos = possible_args[p];
-			if(pos[0] == '&') {
+			if (pos[0] == '&') {
 				pinfo = possible_args + p;
 				p += pos[1] == 0 ? 1 : strlen(pos) - 1;
 				continue;
 			}
 			plen = strlen(pos);
-			if(!strncmp(arg, pos, plen))
+			if (!strncmp(arg, pos, plen)) {
 				break;
+			}
 		}
-		if(p == (int) ARRLEN(possible_args))
+		if (p == (int) ARRLEN(possible_args)) {
 			return argi;
+		}
 		arg += plen;
 		info = *pinfo + 1;
-		if((info[0] != 0) != (*arg == '='))
+		if ((info[0] != 0) != (*arg == '=')) {
 			return argi;
+		}
 		pinfo++;
-		if(info[0] == 0) {
+		if (info[0] == 0) {
 			((void (*)(void)) *pinfo)();
 			continue;
 		}
 		arg++;
-		for(; *info; info++, pinfo++) switch(*info) {
-		case 'i':
-			*(int*) *pinfo = strtol(arg, (char**) &arg, 10);
-			while(*arg == ',')
-				arg++;
-			break;
+		for (; *info; info++, pinfo++) {
+			switch (*info) {
+			case 'i':
+				*(int*) *pinfo = strtol(arg, (char**) &arg, 10);
+				while (*arg == ',') {
+					arg++;
+				}
+				break;
+			}
 		}
 	}
 	return 0;
