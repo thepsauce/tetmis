@@ -45,6 +45,7 @@ enum {
 	GS_PIECEFELL,
 	GS_PAUSED,
 	GS_GAMEOVER,
+	GS_QUIT
 };
 
 void game_setstate(int state);
