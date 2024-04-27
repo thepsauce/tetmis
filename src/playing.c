@@ -259,7 +259,7 @@ int gs_piecefell(int c)
 			const int y = main_grid.lastLines[i] *
 				main_grid.transform.yScale;
 			for (int x = 0; x < main_grid.w *
-					main_grid.transform.xScale; x++) {
+					main_grid.transform.xScale - 1; x++) {
 				render_cell(y, x, NULL, "\u2588");
 			}
 		}
