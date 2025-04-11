@@ -23,7 +23,3 @@ gcc src/main.c src/args.c src/playing.c -Iinclude -lncursesw -o tetmis
 <kbd>f</kbd>   Rotate right<br>
 
 <kbd>Enter</kbd>  Pause
-
-## Windows version
-
-I made a version where I used WINAPI, it can be found here: https://github.com/thepsauce/Tetris-in-C
